@@ -8,6 +8,7 @@ urlpatterns = [
     # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('signup/', views.UserView.as_view(), name='user_view'),
     path('update/', views.UserView.as_view(), name='user_update'),
+    path('delete/', views.UserView.as_view(), name='user_delete'),
     path('check/', views.AuthAPIView.as_view(), name='user_check'),
     path('login/', views.AuthAPIView.as_view(), name='user_login'),
     path('logout/', views.AuthAPIView.as_view(), name='logout_view'),

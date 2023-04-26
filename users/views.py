@@ -11,6 +11,7 @@ from users.models import User
 from users.serializers import UserSerializer, LoginSerializer, UserUpdateSerializer
 
 class UserView(APIView):
+    # 회원가입
     def post(self, request):
         serializer = UserSerializer(data = request.data)
         if serializer.is_valid():
@@ -19,6 +20,7 @@ class UserView(APIView):
         else:
             return Response({"messege":f"${serializer.errors}"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # 회원정보 수정
     def put(self, request):
         permission_classes = [permissions.IsAuthenticated]
         serializer = UserUpdateSerializer(request.user, data = request.data)
@@ -27,6 +29,14 @@ class UserView(APIView):
             return Response({"message":"수정완료"}, status=status.HTTP_201_CREATED) 
         else:
             return Response({"messege":f"${serializer.errors}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 회원탈퇴    
+    def delete(self, request):
+        permission_classes = [permissions.IsAuthenticated]
+        user=self.request.user
+        user.delete()
+
+        return Response({"message":"계정이 삭제되었습니다."})
 
 class AuthAPIView(APIView):
     # 유저 정보 확인
