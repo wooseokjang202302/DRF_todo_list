@@ -9,6 +9,8 @@ from django.contrib.auth import authenticate
 from drf_todo_list.settings import SECRET_KEY
 from users.models import User
 from users.serializers import UserSerializer, LoginSerializer, UserUpdateSerializer
+from users import messages
+
 
 class UserView(APIView):
     # 회원가입
@@ -16,27 +18,28 @@ class UserView(APIView):
         serializer = UserSerializer(data = request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message":"가입완료"}, status=status.HTTP_201_CREATED) 
+            return Response({"message":messages.SUCCESS_SIGNUP}, status=status.HTTP_201_CREATED) 
         else:
-            return Response({"messege":f"${serializer.errors}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message":f"${serializer.errors}"}, status=status.HTTP_400_BAD_REQUEST)
 
     # 회원정보 수정
     def put(self, request):
-        permission_classes = [permissions.IsAuthenticated]
-        serializer = UserUpdateSerializer(request.user, data = request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message":"수정완료"}, status=status.HTTP_201_CREATED) 
-        else:
+        permissions.IsAuthenticated # 변수를 선언하지 않고도 사용이 가능
+        serializer = UserUpdateSerializer(request.user, data=request.data)
+ 
+        if not serializer.is_valid():   # 원래 밑에 save랑 순서가 반대였는데 에러가 나면 밑으로 안내려가고 바로 끝내는게 좋아보여서 바꿈
             return Response({"messege":f"${serializer.errors}"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        return Response({"message":messages.SUCCESS_UPDATE}, status=status.HTTP_201_CREATED)
 
     # 회원탈퇴    
     def delete(self, request):
-        permission_classes = [permissions.IsAuthenticated]
-        user=self.request.user
+        permissions.IsAuthenticated
+        user = self.request.user
         user.delete()
 
-        return Response({"message":"계정이 삭제되었습니다."})
+        return Response({"message":messages.SUCCESS_DELETE})
 
 class AuthAPIView(APIView):
     # 유저 정보 확인
@@ -87,8 +90,8 @@ class AuthAPIView(APIView):
             access_token = str(token.access_token)
             res = Response(
                 {
-                    "user": serializer.data,
-                    "message": "로그인 성공",
+                    "user": serializer.data.get("email"),
+                    "message": messages.SUCCESS_LOGIN,
                     "token": {
                         "access": access_token,
                         "refresh": refresh_token,
@@ -103,14 +106,12 @@ class AuthAPIView(APIView):
             res.set_cookie("refresh", refresh_token, httponly=True)
             return res
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message":messages.FAIL_LOGIN}, status=status.HTTP_400_BAD_REQUEST)
 
     # 로그아웃
     def delete(self, request):
         # 쿠키에 저장된 토큰 삭제 => 로그아웃 처리
-        response = Response({
-            "message": "로그아웃 성공"
-            }, status=status.HTTP_202_ACCEPTED)
+        response = Response({"message": messages.SUCCESS_LOGOUT}, status=status.HTTP_202_ACCEPTED)
         response.delete_cookie("access")
         response.delete_cookie("refresh")
         return response
